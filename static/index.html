@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestión de Startups y Sesiones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+    <style>
+        :root {
+            --main-gradient: linear-gradient(90deg, #1f0d1e, #070d34);
+            --vertical-gradient: linear-gradient(180deg, #1f0d1e, #070d34);
+            --text-content: #070d34; /* Azul oscuro casi negro */
+            --title-content: #1f0d1e; /* Morado muy oscuro */
+        }
+
+        body {
+            font-family: Helvetica, Sans-Serif;
+            background-color: #f8fafc; /* Color de fondo general */
+            color: #334155; /* Color de texto base (slate-800) */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background-color: var(--text-content); /* Usa tu variable para el color */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer; /* Añadir cursor pointer */
+        }
+
+        .btn-primary:hover {
+            background-color: #050a2b; /* Un poco más oscuro que --text-content al hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background-color: #6b7280; /* Gris 500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563; /* Gris 600 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-field,
+        .select-field {
+            border: 1px solid #cbd5e1; /* Slate 300 */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box; /* Asegura que el padding no aumente el ancho */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .input-field:focus,
+        .select-field:focus {
+            outline: none;
+            border-color: var(--text-content); /* Usa tu variable para el enfoque */
+            box-shadow: 0 0 0 3px rgba(7, 13, 52, 0.2); /* Sombra de enfoque usando --text-content */
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            opacity: 0; /* Inicialmente oculto para animación */
+            transform: translateY(-10px); /* Inicialmente un poco arriba */
+            animation: fadeInSlideDown 0.3s forwards;
+        }
+
+        .alert-success {
+            background-color: #d1fae5; /* Green 100 */
+            color: #065f46; /* Green 800 */
+        }
+
+        .alert-error {
+            background-color: #fee2e2; /* Red 100 */
+            color: #991b1b; /* Red 800 */
+        }
+
+        .alert-warning {
+            background-color: #fffbeb; /* Yellow 100 */
+            color: #92400e; /* Yellow 800 */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            overflow: hidden; /* Para que los bordes redondeados se apliquen a la tabla */
+        }
+
+        th,
+        td {
+            border: 1px solid #e2e8f0; /* Slate 200 */
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f1f5f9; /* Slate 100 */
+            font-weight: 600;
+            color: #475569; /* Slate 700 */
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8fafc; /* slate-50 */
+        }
+        tr:hover {
+            background-color: #e2e8f0; /* slate-200 */
+        }
+
+        .metric-card {
+            background-color: #f0f9ff; /* Sky 50 */
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .metric-card:hover {
+            background-color: #e0f2fe; /* Sky 100 */
+        }
+
+        .metric-value {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700;
+            color: var(--text-content); /* Usa tu variable para el valor */
+            transition: color 0.3s ease-in-out;
+        }
+
+        .metric-label {
+            font-size: 0.875rem; /* text-sm */
+            color: #64748b; /* Slate 500 */
+            margin-top: 0.5rem;
+        }
+
+        /* Expander (Accordion) styles - no usados actualmente en este HTML, pero incluidos para referencia */
+        .expander-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            font-weight: 600;
+            color: #1e293b; /* Slate 900 */
+            transition: color 0.2s ease-in-out;
+        }
+
+        .expander-header:hover {
+            color: var(--text-content);
+        }
+
+        .expander-content {
+            padding-bottom: 1rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            overflow: hidden; /* Para animaciones de altura */
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .expander-content.active {
+            max-height: 500px; /* Suficientemente grande para contener el contenido */
+            opacity: 1;
+        }
+
+        /* Tab styles - no usados actualmente en este HTML, pero incluidos para referencia */
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .tab-button.active {
+            border-color: var(--text-content);
+            color: var(--text-content);
+        }
+
+        .tab-button:hover {
+            color: var(--text-content);
+        }
+
+        /* Animaciones */
+        @keyframes fadeInSlideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--text-content); /* Color del spinner usando tu variable */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-content); /* Color del texto de carga */
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Aplicar colores de variables a los títulos */
+        h1 {
+            color: var(--title-content);
+        }
+
+        h2 {
+            color: var(--text-content);
+        }
+
+        h3 {
+            color: var(--text-content);
+        }
+
+        h4 {
+            color: var(--text-content);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl font-bold text-center mb-8">Dashboard de Gestión de Startups y Sesiones</h1>
+
+        <div id="messages" class="mb-4 text-center"></div>
+        
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner w-16 h-16 border-t-4 border-b-4"></div>
+                <p>Cargando datos...</p>
+            </div>
+        </div>
+
+        <section class="my-8">
+            <h2 class="text-2xl font-semibold mb-4">Resumen General</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalStartups">0</div>
+                    <div class="metric-label">Total Startups</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="totalMentors">0</div>
+                    <div class="metric-label">Total Mentores</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="signedSessions">0</div>
+                    <div class="metric-label">Sesiones Firmadas</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="my-8">
+            <h2 class="text-2xl font-semibold mb-4">Distribución de Startups por Sector</h2>
+            <div class="card">
+                <div id="sectorDistributionChart" class="w-full h-96"></div>
+                <p id="noSectorDataMessage" class="info-message hidden">No hay datos de startups para el gráfico de sectores.</p>
+            </div>
+        </section>
+
+        <section class="my-8">
+            <h2 class="text-2xl font-semibold mb-4">Distribución de Startups por Etapa</h2>
+            <div class="card mb-6">
+                <div id="stageDistributionChart" class="w-full h-96"></div>
+                <p id="noStageDataMessage" class="info-message hidden">No hay datos de startups para el gráfico de etapas.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-xl font-medium mb-3">Detalle de Startups por Etapa</h3>
+                <select id="stageSelect" class="select-field">
+                    <option value="Todas">-- Todas las Etapas --</option>
+                </select>
+                <div id="filteredStartupsTable" class="mt-4 overflow-x-auto">
+                    <p class="info-message">Selecciona una etapa para ver los detalles.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="my-8">
+            <h2 class="text-2xl font-semibold mb-4">Estado Actual de las Sesiones</h2>
+            <div class="card mb-6">
+                <div id="sessionStatusChart" class="w-full h-96"></div>
+                <p id="noSessionStatusDataMessage" class="info-message hidden">No hay datos de sesiones para el gráfico de estado.</p>
+            </div>
+            <div class="card">
+                <h3 class="text-xl font-medium mb-3">Detalle de Sesiones por Estado</h3>
+                <select id="sessionStatusSelect" class="select-field">
+                    <option value="Todas">-- Todos los Estados --</option>
+                </select>
+                <div id="filteredSessionsTable" class="mt-4 overflow-x-auto">
+                    <p class="info-message">Selecciona un estado para ver los detalles.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="my-8">
+            <h2 class="text-2xl font-semibold mb-4">Gestión y Descarga de Sesiones Detalladas</h2>
+            <div class="card">
+                <p class="text-gray-600 mb-4">Explora todas las sesiones con los nombres del mentor y la startup, y descárgalas en formato Excel.</p>
+                <div id="allSessionsTable" class="mt-4 overflow-x-auto">
+                    <p class="info-message">Cargando todas las sesiones...</p>
+                </div>
+                <div class="mt-4">
+                    <button id="downloadSessionsBtn" class="btn-primary">
+                        Descargar todas las Sesiones (Excel)
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script >
+// script.js
+// URL Base de tu API de FastAPI. Asegúrate de que coincida con la dirección donde corre tu FastAPI.
+const BASE_API_URL = "http://127.0.0.1:8000/api"; 
+
+// Elementos del DOM para mensajes de carga/error
+const messagesDiv = document.getElementById('messages');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+// --- Paleta de colores más moderna y agradable (inspirada en paletas UI) ---
+const modernColors = [
+    '#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A',
+    '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52'
+    // Puedes encontrar más en https://plotly.com/python/discrete-colors/
+];
+
+// --- Configuración de Layout Común para Gráficos ---
+// Centralizamos aquí propiedades de layout que se usarán en todos los gráficos
+const commonLayout = {
+    font: {
+        family: 'Inter, sans-serif', // Usar una fuente moderna (asegúrate de que esté cargada en tu HTML/CSS)
+        size: 12,
+        color: '#333'
+    },
+    title: {
+        font: {
+            size: 18,
+            color: '#2c3e50' // Un color más oscuro para el título
+        },
+        x: 0.05, // Ajustar la posición del título para que no esté demasiado a la izquierda
+        xanchor: 'left',
+        pad: { t: 10, b: 10 }
+    },
+    paper_bgcolor: 'rgba(255,255,255,0)', // Fondo del área del gráfico (transparente por defecto)
+    plot_bgcolor: 'rgba(255,255,255,0)', // Fondo del área de la trama (transparente por defecto)
+    margin: { t: 60, b: 40, l: 40, r: 20 }, // Márgenes generales
+    hovermode: 'closest', // Modo de hover más preciso
+};
+
+/**
+ * Muestra un mensaje de alerta en la parte superior de la página.
+ * @param {string} message - El mensaje a mostrar.
+ * @param {string} type - Tipo de alerta ('success', 'error', 'info', 'warning').
+ */
+function showMessage(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert text-center`;
+    if (type === 'success') {
+        alertDiv.classList.add('alert-success');
+    } else if (type === 'error') {
+        alertDiv.classList.add('alert-error');
+    } else if (type === 'warning') {
+        alertDiv.classList.add('alert-warning');
+    } else {
+        alertDiv.classList.add('info-message');
+    }
+    alertDiv.textContent = message;
+    messagesDiv.innerHTML = '';
+    messagesDiv.appendChild(alertDiv);
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+/** Muestra la superposición de carga. */
+function showLoading() {
+    if (loadingOverlay) loadingOverlay.classList.add('active');
+}
+
+/** Oculta la superposición de carga. */
+function hideLoading() {
+    if (loadingOverlay) loadingOverlay.classList.remove('active');
+}
+
+/**
+ * Función genérica para obtener datos de la API.
+ * @param {string} endpoint - El endpoint de la API (ej. "/startups").
+ * @returns {Promise<Array<Object>>} Los datos de la respuesta JSON.
+ */
+async function fetchData(endpoint) {
+    showLoading();
+    try {
+        const response = await fetch(`${BASE_API_URL}${endpoint}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: `Error HTTP! Status: ${response.status}` }));
+            throw new Error(errorData.detail || `Error HTTP! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(`Datos recibidos de ${BASE_API_URL}${endpoint}:`, data);
+        return data;
+    } catch (error) {
+        console.error(`Error al cargar datos de ${endpoint}:`, error);
+        showMessage(`Error al cargar datos de ${endpoint}: ${error.message}`, 'error');
+        return [];
+    } finally {
+        hideLoading();
+    }
+}
+
+// --- Funciones de Renderizado ---
+
+function renderGeneralSummary(startups, mentors, sessions) {
+    document.getElementById('totalStartups').textContent = startups.length;
+    document.getElementById('totalMentors').textContent = mentors.length;
+    const signedSessionsCount = sessions.filter(s => s.status === 'signed').length;
+    document.getElementById('signedSessions').textContent = signedSessionsCount;
+}
+
+function renderSectorDistribution(startups) {
+    const chartDiv = document.getElementById('sectorDistributionChart');
+    const noDataMessage = document.getElementById('noSectorDataMessage');
+
+    if (!startups || startups.length === 0) {
+        chartDiv.classList.add('hidden');
+        noDataMessage.classList.remove('hidden');
+        return;
+    }
+    chartDiv.classList.remove('hidden');
+    noDataMessage.classList.add('hidden');
+
+    const sectorCounts = {};
+    startups.forEach(s => {
+        const sector = s.sector || 'Desconocido';
+        sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
+    });
+
+    const sortedSectors = Object.entries(sectorCounts).sort(([, countA], [, countB]) => countB - countA);
+
+    // Agrupar "Otros" si hay muchos sectores
+    const topNSectors = 7; // Mostrar los 7 principales + "Otros"
+    let displaySectors = [];
+    let otherCount = 0;
+
+    if (sortedSectors.length > topNSectors) {
+        displaySectors = sortedSectors.slice(0, topNSectors - 1);
+        otherCount = sortedSectors.slice(topNSectors - 1).reduce((sum, [, count]) => sum + count, 0);
+        if (otherCount > 0) {
+            displaySectors.push(["Otros", otherCount]);
+        }
+    } else {
+        displaySectors = sortedSectors;
+    }
+
+    const data = [{
+        values: displaySectors.map(item => item[1]),
+        labels: displaySectors.map(item => item[0]),
+        type: 'pie',
+        hole: .5, // Un agujero más grande para un aspecto moderno
+        marker: {
+            colors: modernColors, // Usar la paleta de colores moderna
+            line: {
+                color: '#fff', // Borde blanco entre secciones
+                width: 2
+            }
+        },
+        hoverinfo: 'label+percent+value', // Mostrar más info al pasar el ratón
+        textinfo: 'percent', // Solo porcentaje dentro de la rodaja
+        textposition: 'inside', // Texto dentro de la rodaja
+        automargin: true, // Autoajustar márgenes para que las etiquetas no se corten
+        pull: [0.03, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Tirar ligeramente la primera rebanada para destacarla
+    }];
+
+    const layout = {
+        ...commonLayout, // Herencia de propiedades comunes
+        title: 'Distribución por Sector de Startups',
+        height: 384,
+        legend: {
+            orientation: 'h', // Leyenda horizontal
+            yanchor: 'bottom',
+            y: -0.2, // Posición bajo el gráfico
+            xanchor: 'center',
+            x: 0.5,
+            font: { size: 10 }
+        }
+    };
+
+    Plotly.newPlot(chartDiv, data, layout, {responsive: true, displayModeBar: false}); // Ocultar barra de herramientas por defecto
+}
+
+function renderStageDistribution(startups) {
+    const chartDiv = document.getElementById('stageDistributionChart');
+    const noDataMessage = document.getElementById('noStageDataMessage');
+    const stageSelect = document.getElementById('stageSelect');
+
+    if (!startups || startups.length === 0) {
+        chartDiv.classList.add('hidden');
+        noDataMessage.classList.remove('hidden');
+        stageSelect.innerHTML = '<option value="Todas">-- No hay etapas disponibles --</option>';
+        return;
+    }
+    chartDiv.classList.remove('hidden');
+    noDataMessage.classList.add('hidden');
+
+    const stageCounts = {};
+    startups.forEach(s => {
+        const stage = s.stage || 'Desconocida';
+        stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+    });
+
+    const stages = Object.keys(stageCounts).sort();
+    const counts = stages.map(stage => stageCounts[stage]);
+
+    const data = [{
+        x: stages,
+        y: counts,
+        type: 'bar',
+        marker: {
+            color: stages.map((_, i) => modernColors[i % modernColors.length]), // Usar la paleta moderna
+            line: {
+                color: '#fff', // Borde blanco
+                width: 1
+            }
+        },
+        text: counts.map(String),
+        textposition: 'auto',
+        hovertemplate: '<b>%{x}</b><br>Startups: %{y}<extra></extra>', // Plantilla personalizada para hover
+        width: 0.7 // Ancho de las barras
+    }];
+
+    const layout = {
+        ...commonLayout, // Herencia de propiedades comunes
+        title: 'Conteo de Startups por Etapa',
+        height: 384,
+        xaxis: { 
+            title: 'Etapa',
+            categoryorder: 'array', // Mantener el orden de las etapas como se define
+            categoryarray: stages, // Usar las etapas ordenadas como el array de categorías
+            automargin: true, // Ajustar márgenes para las etiquetas del eje X
+            tickangle: -45, // Rotar etiquetas para evitar solapamiento
+            gridcolor: '#e0e0e0', // Color de las líneas de la cuadrícula
+            zeroline: false // Eliminar línea cero
+        },
+        yaxis: { 
+            title: 'Cantidad de Startups',
+            gridcolor: '#e0e0e0', // Color de las líneas de la cuadrícula
+            zeroline: false // Eliminar línea cero
+        },
+        bargap: 0.2 // Espacio entre barras
+    };
+
+    Plotly.newPlot(chartDiv, data, layout, {responsive: true, displayModeBar: false});
+
+    // Populate stage select dropdown
+    stageSelect.innerHTML = '<option value="Todas">-- Todas las Etapas --</option>';
+    stages.forEach(stage => {
+        const option = document.createElement('option');
+        option.value = stage;
+        option.textContent = stage;
+        stageSelect.appendChild(option);
+    });
+}
+
+function renderFilteredStartupsTable(startups, selectedStage) {
+    const tableDiv = document.getElementById('filteredStartupsTable');
+    let filteredStartups = [];
+
+    if (selectedStage === 'Todas') {
+        filteredStartups = startups;
+    } else {
+        filteredStartups = startups.filter(s => s.stage === selectedStage);
+    }
+
+    if (filteredStartups.length === 0) {
+        tableDiv.innerHTML = '<p class="info-message">No hay startups en esta etapa para mostrar.</p>';
+        return;
+    }
+
+    const headers = ['Compañía', 'Sector', 'Etapa', 'Persona de Contacto', 'Email', 'Sitio Web'];
+    let tableHTML = `<table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50"><tr>${headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('')}</tr></thead>
+        <tbody class="bg-white divide-y divide-gray-200">`;
+
+    filteredStartups.forEach(s => {
+        tableHTML += `<tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${s.company || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.sector || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.stage || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.contact || s.contactPerson || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.email || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.website ? `<a href="${s.website.startsWith('http') ? s.website : 'https://' + s.website}" target="_blank" class="text-indigo-600 hover:underline">${s.website}</a>` : '---'}</td>
+        </tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    tableDiv.innerHTML = tableHTML;
+}
+
+function renderSessionStatusDistribution(sessions) {
+    const chartDiv = document.getElementById('sessionStatusChart');
+    const noDataMessage = document.getElementById('noSessionStatusDataMessage');
+    const statusSelect = document.getElementById('sessionStatusSelect');
+
+    if (!sessions || sessions.length === 0) {
+        chartDiv.classList.add('hidden');
+        noDataMessage.classList.remove('hidden');
+        statusSelect.innerHTML = '<option value="Todas">-- No hay estados disponibles --</option>';
+        return;
+    }
+    chartDiv.classList.remove('hidden');
+    noDataMessage.classList.add('hidden');
+
+    const statusCounts = {};
+    sessions.forEach(s => {
+        const status = s.status || 'Desconocido';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    const statuses = Object.keys(statusCounts).sort();
+    const counts = statuses.map(status => statusCounts[status]);
+
+    const data = [{
+        x: statuses,
+        y: counts,
+        type: 'bar',
+        marker: {
+            color: statuses.map((_, i) => modernColors[i % modernColors.length]), // Usar la paleta moderna
+            line: {
+                color: '#fff',
+                width: 1
+            }
+        },
+        text: counts.map(String),
+        textposition: 'auto',
+        hovertemplate: '<b>%{x}</b><br>Sesiones: %{y}<extra></extra>',
+        width: 0.7
+    }];
+
+   
+
+    const layout = {
+        ...commonLayout, // Herencia de propiedades comunes
+        title: 'Conteo de Sesiones por Estado',
+        height: 384,
+        xaxis: { 
+            title: 'Estado',
+            categoryorder: 'array',
+            categoryarray: statuses,
+            automargin: true,
+            tickangle: -45,
+            gridcolor: '#e0e0e0',
+            zeroline: false
+        },
+        yaxis: { 
+            title: 'Cantidad de Sesiones',
+            gridcolor: '#e0e0e0',
+            zeroline: false
+        },
+        bargap: 0.2
+    };
+
+    Plotly.newPlot(chartDiv, data, layout, {responsive: true, displayModeBar: false});
+
+    // Populate session status select dropdown
+    statusSelect.innerHTML = '<option value="Todas">-- Todos los Estados --</option>';
+    statuses.forEach(status => {
+        const option = document.createElement('option');
+        option.value = status;
+        option.textContent = status;
+        statusSelect.appendChild(option);
+    });
+}
+
+function renderFilteredSessionsTable(sessions, selectedStatus) {
+    const tableDiv = document.getElementById('filteredSessionsTable');
+    let filteredSessions = [];
+
+    if (selectedStatus === 'Todas') {
+        filteredSessions = sessions;
+    } else {
+        filteredSessions = sessions.filter(s => s.status === selectedStatus);
+    }
+
+    if (filteredSessions.length === 0) {
+        tableDiv.innerHTML = '<p class="info-message">No hay sesiones con este estado para mostrar.</p>';
+        return;
+    }
+
+    const headers = ['Fecha', 'Compañía Mentor', 'Compañía Startup', 'Tema', 'Estado', 'Resumen', 'Comentarios'];
+    let tableHTML = `<table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50"><tr>${headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('')}</tr></thead>
+        <tbody class="bg-white divide-y divide-gray-200">`;
+
+    filteredSessions.forEach(s => {
+        tableHTML += `<tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${s.date || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.CompanyName || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.startup_company || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.topic || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.status || '---'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${s.summary || '---'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${s.comments && s.comments.length > 0 ? s.comments.join(', ') : '---'}</td>
+        </tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    tableDiv.innerHTML = tableHTML;
+}
+
+function renderAllSessionsTableAndDownloadButton(sessions) {
+    const tableDiv = document.getElementById('allSessionsTable');
+    const downloadBtn = document.getElementById('downloadSessionsBtn');
+
+    if (!sessions || sessions.length === 0) {
+        tableDiv.innerHTML = '<p class="info-message">No hay sesiones registradas para mostrar o descargar.</p>';
+        downloadBtn.disabled = true;
+        downloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        return;
+    }
+    downloadBtn.disabled = false;
+    downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+    const headers = ['Fecha', 'Compañía Mentor', 'Compañía Startup', 'Tema', 'Estado',  'Duración', 'Comentarios', 'URL PDF', 'Mentor Firmó', 'Startup Firmó'];
+    let tableHTML = `<table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50"><tr>${headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('')}</tr></thead>
+        <tbody class="bg-white divide-y divide-gray-200">`;
+
+    sessions.forEach(s => {
+        tableHTML += `<tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${s.date || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.CompanyName || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.startup_company || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.topic || '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.status || '---'}</td>
+            
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.duration || '---'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${s.comments && s.comments.length > 0 ? s.comments.join(', ') : '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.pdfUrl ? `<a href="${s.pdfUrl}" target="_blank" class="text-indigo-600 hover:underline">Ver PDF</a>` : '---'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.mentorSigned ? 'Sí' : 'No'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.startupSigned ? 'Sí' : 'No'}</td>
+        </tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    tableDiv.innerHTML = tableHTML;
+
+    downloadBtn.onclick = () => {
+        window.location.href = `${BASE_API_URL}/sessions/download_excel`;
+    };
+}
+
+
+// --- Event Listeners y Carga Inicial ---
+document.addEventListener('DOMContentLoaded', async () => {
+    let allStartups = [];
+    let allMentors = [];
+    let allSessions = [];
+
+    // Cargar datos
+    try {
+        allStartups = await fetchData("/startups");
+        allMentors = await fetchData("/mentors");
+        allSessions = await fetchData("/sessions/detailed");
+    } catch (error) {
+        // El error ya se muestra en fetchData, aquí solo para un control adicional si fuera necesario.
+    }
+
+    // Renderizar todas las secciones del dashboard
+    renderGeneralSummary(allStartups, allMentors, allSessions);
+    renderSectorDistribution(allStartups);
+    renderStageDistribution(allStartups);
+    renderSessionStatusDistribution(allSessions);
+    renderAllSessionsTableAndDownloadButton(allSessions);
+
+    // Event listener para el select de etapa de startups
+    const stageSelect = document.getElementById('stageSelect');
+    if (stageSelect) {
+        stageSelect.addEventListener('change', (event) => {
+            renderFilteredStartupsTable(allStartups, event.target.value);
+        });
+        renderFilteredStartupsTable(allStartups, stageSelect.value);
+    }
+
+    // Event listener para el select de estado de sesiones
+    const sessionStatusSelect = document.getElementById('sessionStatusSelect');
+    if (sessionStatusSelect) {
+        sessionStatusSelect.addEventListener('change', (event) => {
+            renderFilteredSessionsTable(allSessions, event.target.value);
+        });
+        renderFilteredSessionsTable(allSessions, sessionStatusSelect.value);
+    }
+});
+    </script>
+</body>
+</html>
