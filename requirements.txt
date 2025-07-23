@@ -1,7 +1,6 @@
-streamlit>=1.36.0
-pymongo>=4.0
-python-dotenv>=1.0.0
-pandas>=2.0.0
-plotly>=5.0.0
-openpyxl>=3.0.0
+fastapi
+uvicorn
+pymongo
+python-dotenv
+pydantic
 gunicorn
